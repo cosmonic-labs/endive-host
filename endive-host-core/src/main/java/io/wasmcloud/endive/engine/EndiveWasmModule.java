@@ -47,6 +47,7 @@ public class EndiveWasmModule implements WasmModule {
                     .build();
             var instance = Instance.builder(module)
                     .withImportValues(importValues)
+                    .withStart(false)
                     .build();
 
             var start = instance.export("_start");
