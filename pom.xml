@@ -14,6 +14,7 @@
     <modules>
         <module>endive-host-core</module>
         <module>endive-host-app</module>
+        <module>examples/vertx-demo</module>
     </modules>
 
     <properties>
@@ -30,6 +31,7 @@
         <logback.version>1.5.15</logback.version>
         <slf4j.version>2.0.16</slf4j.version>
         <junit.version>5.11.4</junit.version>
+        <vertx.version>4.5.11</vertx.version>
     </properties>
 
     <dependencyManagement>
@@ -101,6 +103,15 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+
+            <!-- Vert.x (demo only) -->
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-stack-depchain</artifactId>
+                <version>${vertx.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <!-- Test -->

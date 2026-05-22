@@ -192,7 +192,9 @@ endive-host/
 ├── examples/
 │   ├── hello.wasm           # WASI Preview 1 "hello world" demo module
 │   ├── host.yaml            # YAML config example for the standalone path
-│   └── workload.yaml        # Kubernetes Workload CR example
+│   ├── workload.yaml        # Kubernetes Workload CR example
+│   └── vertx-demo/          # Vert.x app embedding endive-host alongside
+│                            #   pure-Java handler functions
 ├── scripts/sync-crds.sh     # pulls CRDs from the published Helm chart
 └── Dockerfile               # eclipse-temurin:21-jre-alpine + shaded jar
 ```
