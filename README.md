@@ -45,14 +45,17 @@ git clone https://github.com/bytecodealliance/endive ~/repos/bytecodealliance/en
 cd ~/repos/bytecodealliance/endive && ./mvnw install -DskipTests
 ```
 
-Then build and run the host stack:
+Then, from this repo:
 
 ```sh
-cd ~/repos/cosmonic-labs/endive-host
-mvn -DskipTests package
-cd deploy/k3s
-GATEWAY_PORT=8000 docker compose up -d --build
+make demo       # build, compose up, push hello.wasm, apply Workload, curl /hi
+# ... record what you need ...
+make down       # docker compose down -v + wipe deploy/k3s/tmp
 ```
+
+`make demo` does the full end-to-end loop in ~30 seconds. The individual
+steps it runs are listed in the [Deploying a wasm module](#deploying-a-wasm-module)
+section below, so you can run them by hand for a recording.
 
 That brings up k3s (with the wasmCloud CRDs already loaded), NATS, an OCI
 registry, the wasmCloud runtime-operator, runtime-gateway, and the endive-host
@@ -212,12 +215,33 @@ scripts/sync-crds.sh --version 2.3.0 # bump
 
 The synced version is recorded in `charts/runtime-operator/crds/.version`.
 
+## Make targets
+
+| target | what it does |
+| --- | --- |
+| `make build` | `mvn -DskipTests package` for the whole reactor (host + vertx-demo). |
+| `make demo` | `make build`, then `docker compose up -d --build`, push `examples/hello.wasm` to the local registry, apply `examples/workload.yaml`, `kubectl wait`, and `curl /hi`. |
+| `make down` | `docker compose down -v` and `rm -rf deploy/k3s/tmp`. |
+
+`GATEWAY_PORT`, `ENDIVE_HOST_PORT`, and `REGISTRY_PORT` overrides are
+respected (defaults 8000 / 8081 / 5050).
+
 ## Building
 
 ```sh
-mvn -DskipTests package
+make build
 # endive-host-app/target/endive-host-app-0.1.0-SNAPSHOT.jar (shaded fat jar)
 
 # rebuild just the host container in the running stack:
 cd deploy/k3s && docker compose up -d --build endive-host
 ```
+
+## Tests
+
+```sh
+mvn -pl endive-host-core test
+# Tests run: 21, Failures: 0, Errors: 0
+```
+
+Coverage today: OCI reference parsing (including the registry-port edge case),
+`WWW-Authenticate` challenge parsing, and the `WorkloadManager` state machine.
