@@ -1,0 +1,17 @@
+host:
+  friendly-name: demo-host
+  host-group: default
+
+nats:
+  url: nats://localhost:4222
+
+http:
+  port: 9090
+  bind-address: 0.0.0.0
+
+workloads:
+  - id: hello
+    wasm-path: examples/hello.wasm
+    trigger:
+      type: http
+      path: /hello

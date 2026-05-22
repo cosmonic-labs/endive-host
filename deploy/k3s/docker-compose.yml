@@ -1,0 +1,115 @@
+services:
+  kubernetes:
+    image: "rancher/k3s:${K3S_VERSION:-latest}"
+    command: server
+    attach: false
+    healthcheck:
+      test: ["CMD", "/scripts/healthcheck.sh"]
+      interval: 5s
+      timeout: 1s
+      retries: 1
+      start_period: 15s
+      start_interval: 3s
+    tmpfs:
+      - /run
+      - /var/run
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+    privileged: true
+    restart: always
+    environment:
+      - K3S_CONFIG_FILE=/scripts/k3s.conf
+    volumes:
+      - k3s:/var/lib/rancher/k3s
+      # automatically load wasmcloud CRDs
+      - ../../charts/runtime-operator/crds/:/crds
+      # kubeconfig output
+      - ./tmp:/output
+      # scripts
+      - ./kubernetes/:/scripts
+    ports:
+      - 6443:6443 # Kubernetes API Server
+
+  registry:
+    image: registry:2
+    restart: always
+    ports:
+      - "${REGISTRY_PORT:-5050}:5000"
+
+  nats:
+    image: nats:2-alpine
+    attach: false
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1:4222"]
+      interval: 5s
+      timeout: 1s
+      retries: 1
+      start_period: 2s
+      start_interval: 2s
+    command:
+      - "-js"
+      - "--store_dir"
+      - "/data"
+    ports:
+      - 4222:4222
+    volumes:
+      - nats:/data
+
+  operator:
+    image: ghcr.io/wasmcloud/runtime-operator:2.2.1
+    restart: always
+    environment:
+      - KUBECONFIG=/output/operator.yaml
+      - OPERATOR_NAMESPACE=default
+    command:
+      - "-nats-url=nats://nats:4222"
+    volumes:
+      - ./tmp:/output
+    depends_on:
+      nats:
+        condition: service_healthy
+      kubernetes:
+        condition: service_healthy
+
+  gateway:
+    image: ghcr.io/wasmcloud/runtime-gateway:2.2.1
+    restart: always
+    environment:
+      - KUBECONFIG=/output/gateway.yaml
+    volumes:
+      - ./tmp:/output
+    depends_on:
+      kubernetes:
+        condition: service_healthy
+    ports:
+      - "${GATEWAY_PORT:-80}:8000"
+
+  endive-host:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: endive-host:dev
+    restart: always
+    environment:
+      - ENDIVE_INSECURE_REGISTRIES=registry:5000,localhost:5000
+    command:
+      - "--nats-url"
+      - "nats://nats:4222"
+      - "--http-port"
+      - "8080"
+      - "--host-group"
+      - "default"
+      - "--host-name"
+      - "endive-host"
+    ports:
+      - "${ENDIVE_HOST_PORT:-8081}:8080"
+    depends_on:
+      nats:
+        condition: service_healthy
+
+volumes:
+  k3s: {}
+  nats: {}
