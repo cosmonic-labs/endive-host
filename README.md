@@ -35,17 +35,54 @@ What this host **does not** do:
   directly on its own port; the gateway sees the workload via the operator but
   does not route requests through.
 
-## Quickstart
+## Prerequisites
 
-Prereqs: Docker, Maven 3.9+, JDK 21+, and Endive 999-SNAPSHOT in your local
-`~/.m2`. To build Endive locally:
+- **Docker** (for the compose stack)
+- **Maven 3.9+** and **JDK 21+** (for building this repo)
+- **Endive `999-SNAPSHOT`** in your local Maven cache (see next section)
+- Optional, for the operator-driven demo: **`oras`**, **`kubectl`**, **`nats`** CLIs
+
+### Building Endive into your local Maven cache
+
+Endive is not yet published to Maven Central, so the `run.endive:*` artifacts
+this project depends on have to be built locally and dropped into
+`~/.m2/repository/run/endive/`. One-time setup:
 
 ```sh
 git clone https://github.com/bytecodealliance/endive ~/repos/bytecodealliance/endive
-cd ~/repos/bytecodealliance/endive && ./mvnw install -DskipTests
+cd ~/repos/bytecodealliance/endive
+./mvnw install -DskipTests
 ```
 
-Then, from this repo:
+`mvn install` is the important verb — `package` alone leaves the jars in
+Endive's own `target/` and our build won't see them.
+
+Verify the install landed:
+
+```sh
+ls ~/.m2/repository/run/endive/runtime/999-SNAPSHOT/
+# runtime-999-SNAPSHOT.jar  runtime-999-SNAPSHOT.pom  ...
+
+ls ~/.m2/repository/run/endive/wasi/999-SNAPSHOT/
+# wasi-999-SNAPSHOT.jar  wasi-999-SNAPSHOT.pom  ...
+```
+
+If both directories exist with `.jar` files (not just `.lastUpdated` markers),
+Maven will resolve `run.endive:runtime` and `run.endive:wasi` for our build.
+
+The Endive version this repo expects is pinned in [`pom.xml`](pom.xml):
+
+```xml
+<endive.version>999-SNAPSHOT</endive.version>
+```
+
+When Endive starts publishing real releases, bump that property and re-run
+`mvn install` against the matching Endive tag. If you see a build failure like
+`Could not find artifact run.endive:runtime:jar:<X> in central` and the
+artifacts exist in `~/.m2`, run `mvn -U` to force a re-resolve — Maven caches
+the previous miss.
+
+## Quickstart
 
 ```sh
 make demo       # build, compose up, push hello.wasm, apply Workload, curl /hi
