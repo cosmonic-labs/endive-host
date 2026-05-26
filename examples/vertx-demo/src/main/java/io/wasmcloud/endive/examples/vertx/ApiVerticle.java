@@ -29,16 +29,28 @@ public class ApiVerticle extends AbstractVerticle {
         router.get("/hello").handler(new HelloFunction());
         router.get("/time").handler(new TimeFunction());
 
-        var wasmFn = WasmFunction.fromClasspath("/hello.wasm");
-        router.get("/wasm/hello").handler(wasmFn);
-        router.post("/wasm/hello").handler(wasmFn);
+        var helloWasm = WasmFunction.fromClasspath("/hello.wasm", "text/plain; charset=utf-8");
+        router.get("/wasm/hello").handler(helloWasm);
+        router.post("/wasm/hello").handler(helloWasm);
+
+        var markdownInvoker = WasmInvoker.fromClasspath("/markdown.wasm");
+        router.post("/wasm/markdown").handler(
+                new WasmFunction(markdownInvoker, "text/html; charset=utf-8"));
+
+        // Java handler that calls the markdown wasm in-process (no HTTP hop).
+        router.post("/render").handler(new RenderFunction(markdownInvoker));
 
         vertx.createHttpServer()
                 .requestHandler(router)
                 .listen(port)
                 .onSuccess(s -> {
                     LOG.info("HTTP server listening on :{}", port);
-                    LOG.info("Routes: GET /hello (java)  GET /time (java)  GET|POST /wasm/hello (endive)");
+                    LOG.info("Routes:");
+                    LOG.info("  GET       /hello          (java)");
+                    LOG.info("  GET       /time           (java)");
+                    LOG.info("  GET|POST  /wasm/hello     (endive: hello.wasm)");
+                    LOG.info("  POST      /wasm/markdown  (endive: markdown.wasm)");
+                    LOG.info("  POST      /render         (java -> wasm markdown -> java)");
                     startPromise.complete();
                 })
                 .onFailure(startPromise::fail);

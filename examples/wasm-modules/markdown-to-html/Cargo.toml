@@ -1,0 +1,16 @@
+[package]
+name = "markdown-to-html"
+version = "0.1.0"
+edition = "2021"
+description = "WASI Preview 1 command: stdin = markdown, stdout = HTML"
+license = "Apache-2.0"
+
+[dependencies]
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

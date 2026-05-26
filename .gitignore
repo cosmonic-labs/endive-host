@@ -36,3 +36,7 @@ target/
 
 # k3s runtime state (kubeconfigs written by the compose stack)
 deploy/k3s/tmp/
+
+# Rust build output for the wasm-module subprojects
+# (Cargo.lock is committed since these are binaries.)
+examples/wasm-modules/**/target/
