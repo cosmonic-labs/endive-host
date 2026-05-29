@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
@@ -27,39 +28,43 @@ public class EndiveWasmModule implements WasmModule {
 
     @Override
     public byte[] invoke(byte[] stdin, Map<String, String> env) {
-        var stdoutStream = new ByteArrayOutputStream();
-        var stderrStream = new ByteArrayOutputStream();
+        try (var stdinStream = new ByteArrayInputStream(stdin);
+             var stdoutStream = new ByteArrayOutputStream();
+             var stderrStream = new ByteArrayOutputStream()) {
 
-        var optionsBuilder = WasiOptions.builder()
-                .withStdin(new ByteArrayInputStream(stdin))
-                .withStdout(stdoutStream)
-                .withStderr(stderrStream);
+            var optionsBuilder = WasiOptions.builder()
+                    .withStdin(stdinStream)
+                    .withStdout(stdoutStream)
+                    .withStderr(stderrStream);
 
-        for (var entry : env.entrySet()) {
-            optionsBuilder.withEnvironment(entry.getKey(), entry.getValue());
+            for (var entry : env.entrySet()) {
+                optionsBuilder.withEnvironment(entry.getKey(), entry.getValue());
+            }
+
+            try (var wasi = WasiPreview1.builder().withOptions(optionsBuilder.build()).build()) {
+                var hostFunctions = WasiPreview1_ModuleFactory.toHostFunctions(wasi);
+                var importValues = ImportValues.builder()
+                        .withFunctions(Arrays.asList(hostFunctions))
+                        .build();
+                var instance = Instance.builder(module)
+                        .withImportValues(importValues)
+                        .withMachineFactory(machineFactory)
+                        .withStart(false)
+                        .build();
+
+                instance.export("_start").apply();
+            } catch (Exception e) {
+                LOG.debug("Module execution completed (may have called proc_exit): {}", e.getMessage());
+            }
+
+            var stderr = stderrStream.toByteArray();
+            if (stderr.length > 0) {
+                LOG.debug("Module stderr: {}", new String(stderr));
+            }
+
+            return stdoutStream.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("I/O error during module invocation", e);
         }
-
-        try (var wasi = WasiPreview1.builder().withOptions(optionsBuilder.build()).build()) {
-            var hostFunctions = WasiPreview1_ModuleFactory.toHostFunctions(wasi);
-            var importValues = ImportValues.builder()
-                    .withFunctions(Arrays.asList(hostFunctions))
-                    .build();
-            var instance = Instance.builder(module)
-                    .withImportValues(importValues)
-                    .withMachineFactory(machineFactory)
-                    .withStart(false)
-                    .build();
-
-            instance.export("_start").apply();
-        } catch (Exception e) {
-            LOG.debug("Module execution completed (may have called proc_exit): {}", e.getMessage());
-        }
-
-        var stderr = stderrStream.toByteArray();
-        if (stderr.length > 0) {
-            LOG.debug("Module stderr: {}", new String(stderr));
-        }
-
-        return stdoutStream.toByteArray();
     }
 }
