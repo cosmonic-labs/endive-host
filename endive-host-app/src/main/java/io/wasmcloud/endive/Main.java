@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Spec;
-import picocli.CommandLine.Model.CommandSpec;
 
 import java.util.concurrent.Callable;
 
@@ -16,9 +14,6 @@ import java.util.concurrent.Callable;
         description = "JVM-based WebAssembly host for wasmCloud using Endive runtime")
 public class Main implements Callable<Integer> {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-
-    @Spec
-    private CommandSpec spec;
 
     @Option(names = {"-c", "--config"}, description = "Path to endive-host.yaml config file")
     private String configPath;
@@ -45,23 +40,12 @@ public class Main implements Callable<Integer> {
     public Integer call() throws Exception {
         var config = configPath != null ? HostConfig.load(configPath) : HostConfig.defaults();
 
-        // CLI flags override config file values when explicitly provided
-        var parseResult = spec.commandLine().getParseResult();
-        if (configPath == null || parseResult.hasMatchedOption("--nats-url")) {
-            config.nats().setUrl(natsUrl);
-        }
-        if (configPath == null || parseResult.hasMatchedOption("--http-port")) {
-            config.http().setPort(httpPort);
-        }
-        if (configPath == null || parseResult.hasMatchedOption("--host-group")) {
-            config.host().labels().put("hostgroup", hostGroup);
-        }
-        if (parseResult.hasMatchedOption("--host-id")) {
-            config.host().setId(hostId);
-        }
-        if (parseResult.hasMatchedOption("--host-name")) {
-            config.host().setFriendlyName(hostName);
-        }
+        // picocli fields already reflect CLI > YAML > annotation defaults
+        config.nats().setUrl(natsUrl);
+        config.http().setPort(httpPort);
+        config.host().labels().put("hostgroup", hostGroup);
+        if (hostId != null) config.host().setId(hostId);
+        if (hostName != null) config.host().setFriendlyName(hostName);
 
         var host = new EndiveHost(config);
 
@@ -77,7 +61,21 @@ public class Main implements Callable<Integer> {
     }
 
     public static void main(String[] args) {
-        int exitCode = new CommandLine(new Main()).execute(args);
+        var cmd = new CommandLine(new Main());
+        // Two-pass: first parse to find --config, then set defaults from YAML
+        try {
+            var parseResult = cmd.parseArgs(args);
+            var main = (Main) parseResult.commandSpec().userObject();
+            if (main.configPath != null) {
+                cmd.setDefaultValueProvider(new HostConfigDefaultProvider(main.configPath));
+            }
+        } catch (CommandLine.ParameterException ignored) {
+            // Let execute() handle the error with proper error messaging
+        } catch (Exception e) {
+            LOG.error("Failed to load config", e);
+            System.exit(1);
+        }
+        int exitCode = cmd.execute(args);
         if (exitCode != 0) {
             System.exit(exitCode);
         }
