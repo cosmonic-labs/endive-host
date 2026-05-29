@@ -51,11 +51,12 @@ this project depends on have to be built locally and dropped into
 ```sh
 git clone https://github.com/bytecodealliance/endive ~/repos/bytecodealliance/endive
 cd ~/repos/bytecodealliance/endive
-./mvnw install -DskipTests
+./mvnw -Dquickly
 ```
 
-`mvn install` is the important verb — `package` alone leaves the jars in
-Endive's own `target/` and our build won't see them.
+`-Dquickly` skips tests and installs the jars into your local Maven cache —
+`package` alone leaves the jars in Endive's own `target/` and our build
+won't see them.
 
 Verify the install landed:
 
@@ -77,7 +78,7 @@ The Endive version this repo expects is pinned in [`pom.xml`](pom.xml):
 ```
 
 When Endive starts publishing real releases, bump that property and re-run
-`mvn install` against the matching Endive tag. If you see a build failure like
+`./mvnw -Dquickly` against the matching Endive tag. If you see a build failure like
 `Could not find artifact run.endive:runtime:jar:<X> in central` and the
 artifacts exist in `~/.m2`, run `mvn -U` to force a re-resolve — Maven caches
 the previous miss.
