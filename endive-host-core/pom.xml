@@ -24,6 +24,10 @@
             <groupId>run.endive</groupId>
             <artifactId>wasi</artifactId>
         </dependency>
+        <dependency>
+            <groupId>run.endive</groupId>
+            <artifactId>compiler</artifactId>
+        </dependency>
 
         <!-- NATS -->
         <dependency>
