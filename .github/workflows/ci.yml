@@ -23,7 +23,7 @@ jobs:
         run: |
           git clone https://github.com/bytecodealliance/endive /tmp/endive
           cd /tmp/endive
-          ./mvnw -B -DskipTests install
+          ./mvnw -Dquickly
 
       - name: Build and test
         run: mvn -B verify
@@ -48,7 +48,7 @@ jobs:
         run: |
           git clone https://github.com/bytecodealliance/endive /tmp/endive
           cd /tmp/endive
-          ./mvnw -B -DskipTests install
+          ./mvnw -Dquickly
 
       - name: Install oras
         run: |
