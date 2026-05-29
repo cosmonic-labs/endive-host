@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Clone and install Endive
+        run: |
+          git clone https://github.com/bytecodealliance/endive /tmp/endive
+          cd /tmp/endive
+          ./mvnw -B -DskipTests install
+
+      - name: Build and test
+        run: mvn -B verify
+
+      - name: Build Docker image
+        run: docker build -t endive-host:ci .
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Clone and install Endive
+        run: |
+          git clone https://github.com/bytecodealliance/endive /tmp/endive
+          cd /tmp/endive
+          ./mvnw -B -DskipTests install
+
+      - name: Install oras
+        run: |
+          curl -fsSL https://github.com/oras-project/oras/releases/download/v1.2.2/oras_1.2.2_linux_amd64.tar.gz \
+            | tar xz -C /usr/local/bin oras
+
+      - name: Run E2E (make demo)
+        run: make demo
+
+      - name: Verify response
+        run: |
+          RESPONSE=$(curl -sS http://localhost:8081/hi)
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | grep -q "hello world"
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -f deploy/k3s/docker-compose.yml logs
+
+      - name: Tear down
+        if: always()
+        run: make down
