@@ -20,6 +20,10 @@
             <artifactId>endive-host-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

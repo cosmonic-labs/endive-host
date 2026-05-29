@@ -32,6 +32,7 @@
         <slf4j.version>2.0.16</slf4j.version>
         <junit.version>5.11.4</junit.version>
         <vertx.version>4.5.11</vertx.version>
+        <picocli.version>4.7.6</picocli.version>
     </properties>
 
     <dependencyManagement>
@@ -117,6 +118,13 @@
                 <version>${vertx.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- CLI -->
+            <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${picocli.version}</version>
             </dependency>
 
             <!-- Test -->
