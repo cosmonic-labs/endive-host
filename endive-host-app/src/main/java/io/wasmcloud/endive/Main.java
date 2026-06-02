@@ -18,16 +18,13 @@ public class Main implements Callable<Integer> {
     @Option(names = {"-c", "--config"}, description = "Path to endive-host.yaml config file")
     private String configPath;
 
-    @Option(names = "--nats-url", description = "NATS server URL (default: ${DEFAULT-VALUE})",
-            defaultValue = "nats://localhost:4222")
+    @Option(names = "--nats-url", description = "NATS server URL")
     private String natsUrl;
 
-    @Option(names = "--http-port", description = "HTTP server port (default: ${DEFAULT-VALUE})",
-            defaultValue = "8080")
-    private int httpPort;
+    @Option(names = "--http-port", description = "HTTP server port")
+    private Integer httpPort;
 
-    @Option(names = "--host-group", description = "Host group name (default: ${DEFAULT-VALUE})",
-            defaultValue = "default")
+    @Option(names = "--host-group", description = "Host group name")
     private String hostGroup;
 
     @Option(names = "--host-id", description = "Host ID (default: auto-generated UUID)")
@@ -40,12 +37,11 @@ public class Main implements Callable<Integer> {
     public Integer call() throws Exception {
         var config = configPath != null ? HostConfig.load(configPath) : HostConfig.defaults();
 
-        // picocli fields already reflect CLI > YAML > annotation defaults
-        config.nats().setUrl(natsUrl);
-        config.http().setPort(httpPort);
-        config.host().labels().put("hostgroup", hostGroup);
-        if (hostId != null) config.host().setId(hostId);
-        if (hostName != null) config.host().setFriendlyName(hostName);
+        if (natsUrl != null)   config.nats().setUrl(natsUrl);
+        if (httpPort != null)  config.http().setPort(httpPort);
+        if (hostGroup != null) config.host().labels().put("hostgroup", hostGroup);
+        if (hostId != null)    config.host().setId(hostId);
+        if (hostName != null)  config.host().setFriendlyName(hostName);
 
         var host = new EndiveHost(config);
 
@@ -61,21 +57,7 @@ public class Main implements Callable<Integer> {
     }
 
     public static void main(String[] args) {
-        var cmd = new CommandLine(new Main());
-        // Two-pass: first parse to find --config, then set defaults from YAML
-        try {
-            var parseResult = cmd.parseArgs(args);
-            var main = (Main) parseResult.commandSpec().userObject();
-            if (main.configPath != null) {
-                cmd.setDefaultValueProvider(new HostConfigDefaultProvider(main.configPath));
-            }
-        } catch (CommandLine.ParameterException ignored) {
-            // Let execute() handle the error with proper error messaging
-        } catch (Exception e) {
-            LOG.error("Failed to load config", e);
-            System.exit(1);
-        }
-        int exitCode = cmd.execute(args);
+        int exitCode = new CommandLine(new Main()).execute(args);
         if (exitCode != 0) {
             System.exit(exitCode);
         }
