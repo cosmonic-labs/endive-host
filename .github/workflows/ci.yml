@@ -19,15 +19,6 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Checkout Endive
-        uses: actions/checkout@v4
-        with:
-          repository: bytecodealliance/endive
-          path: endive
-
-      - name: Install Endive
-        run: cd endive && ./mvnw -Dquickly
-
       - name: Build and test
         run: mvn -B verify
 
@@ -46,15 +37,6 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-
-      - name: Checkout Endive
-        uses: actions/checkout@v4
-        with:
-          repository: bytecodealliance/endive
-          path: endive
-
-      - name: Install Endive
-        run: cd endive && ./mvnw -Dquickly
 
       - name: Install oras
         run: |

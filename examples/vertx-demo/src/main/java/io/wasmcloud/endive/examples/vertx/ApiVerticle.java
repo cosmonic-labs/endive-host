@@ -40,6 +40,9 @@ public class ApiVerticle extends AbstractVerticle {
         // Java handler that calls the markdown wasm in-process (no HTTP hop).
         router.post("/render").handler(new RenderFunction(markdownInvoker));
 
+        // Same composition, but Avro binary on the wire in and out.
+        router.post("/render/avro").handler(new AvroRenderFunction(markdownInvoker));
+
         vertx.createHttpServer()
                 .requestHandler(router)
                 .listen(port)
@@ -51,6 +54,7 @@ public class ApiVerticle extends AbstractVerticle {
                     LOG.info("  GET|POST  /wasm/hello     (endive: hello.wasm)");
                     LOG.info("  POST      /wasm/markdown  (endive: markdown.wasm)");
                     LOG.info("  POST      /render         (java -> wasm markdown -> java)");
+                    LOG.info("  POST      /render/avro    (avro -> wasm markdown -> avro)");
                     startPromise.complete();
                 })
                 .onFailure(startPromise::fail);

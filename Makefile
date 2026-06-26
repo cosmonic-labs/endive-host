@@ -17,7 +17,7 @@ export GATEWAY_PORT ENDIVE_HOST_PORT REGISTRY_PORT
 help: ## List targets
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-8s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build: ## Build host + vertx-demo (mvn package, -DskipTests)
+build: ## Build host + example demos (mvn package, -DskipTests)
 	mvn -B -DskipTests package
 
 demo: build ## Bring up the stack, push hello.wasm, apply the Workload, curl it

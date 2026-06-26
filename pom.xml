@@ -15,6 +15,7 @@
         <module>endive-host-core</module>
         <module>endive-host-app</module>
         <module>examples/vertx-demo</module>
+        <module>examples/play-demo</module>
     </modules>
 
     <properties>
@@ -22,7 +23,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <endive.version>999-SNAPSHOT</endive.version>
+        <endive.version>1.0.0</endive.version>
         <jnats.version>2.20.5</jnats.version>
         <undertow.version>2.3.18.Final</undertow.version>
         <protobuf.version>4.29.3</protobuf.version>
@@ -33,6 +34,9 @@
         <junit.version>5.11.4</junit.version>
         <vertx.version>4.5.11</vertx.version>
         <picocli.version>4.7.6</picocli.version>
+        <play.version>3.0.6</play.version>
+        <scala.binary.version>2.13</scala.binary.version>
+        <avro.version>1.12.0</avro.version>
     </properties>
 
     <dependencyManagement>
@@ -125,6 +129,25 @@
                 <groupId>info.picocli</groupId>
                 <artifactId>picocli</artifactId>
                 <version>${picocli.version}</version>
+            </dependency>
+
+            <!-- Play Framework, embedded server (demo only) -->
+            <dependency>
+                <groupId>org.playframework</groupId>
+                <artifactId>play-java_${scala.binary.version}</artifactId>
+                <version>${play.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.playframework</groupId>
+                <artifactId>play-netty-server_${scala.binary.version}</artifactId>
+                <version>${play.version}</version>
+            </dependency>
+
+            <!-- Avro (demo body encoding) -->
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
             </dependency>
 
             <!-- Test -->

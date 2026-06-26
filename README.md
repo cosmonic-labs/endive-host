@@ -39,49 +39,18 @@ What this host **does not** do:
 
 - **Docker** (for the compose stack)
 - **Maven 3.9+** and **JDK 21+** (for building this repo)
-- **Endive `999-SNAPSHOT`** in your local Maven cache (see next section)
 - Optional, for the operator-driven demo: **`oras`**, **`kubectl`**, **`nats`** CLIs
 
-### Building Endive into your local Maven cache
+### Endive runtime
 
-Endive is not yet published to Maven Central, so the `run.endive:*` artifacts
-this project depends on have to be built locally and dropped into
-`~/.m2/repository/run/endive/`. One-time setup:
-
-```sh
-git clone https://github.com/bytecodealliance/endive ~/repos/bytecodealliance/endive
-cd ~/repos/bytecodealliance/endive
-./mvnw -Dquickly
-```
-
-`-Dquickly` skips tests and installs the jars into your local Maven cache —
-`package` alone leaves the jars in Endive's own `target/` and our build
-won't see them.
-
-Verify the install landed:
-
-```sh
-ls ~/.m2/repository/run/endive/runtime/999-SNAPSHOT/
-# runtime-999-SNAPSHOT.jar  runtime-999-SNAPSHOT.pom  ...
-
-ls ~/.m2/repository/run/endive/wasi/999-SNAPSHOT/
-# wasi-999-SNAPSHOT.jar  wasi-999-SNAPSHOT.pom  ...
-```
-
-If both directories exist with `.jar` files (not just `.lastUpdated` markers),
-Maven will resolve `run.endive:runtime` and `run.endive:wasi` for our build.
-
-The Endive version this repo expects is pinned in [`pom.xml`](pom.xml):
+Maven fetches the `run.endive:*` artifacts from Maven Central on the first
+build. The version is pinned in [`pom.xml`](pom.xml):
 
 ```xml
-<endive.version>999-SNAPSHOT</endive.version>
+<endive.version>1.0.0</endive.version>
 ```
 
-When Endive starts publishing real releases, bump that property and re-run
-`./mvnw -Dquickly` against the matching Endive tag. If you see a build failure like
-`Could not find artifact run.endive:runtime:jar:<X> in central` and the
-artifacts exist in `~/.m2`, run `mvn -U` to force a re-resolve — Maven caches
-the previous miss.
+To move to a newer Endive release, bump that property.
 
 ## Quickstart
 
@@ -234,8 +203,10 @@ endive-host/
 │   ├── hello.wasm           # WASI Preview 1 "hello world" demo module
 │   ├── host.yaml            # YAML config example for the standalone path
 │   ├── workload.yaml        # Kubernetes Workload CR example
-│   └── vertx-demo/          # Vert.x app embedding endive-host alongside
-│                            #   pure-Java handler functions
+│   ├── vertx-demo/          # Vert.x app embedding endive-host alongside
+│   │                        #   pure-Java handler functions
+│   └── play-demo/           # Play Framework app embedding endive-host
+│                            #   (same routes, embedded Server.forRouter)
 ├── scripts/sync-crds.sh     # pulls CRDs from the published Helm chart
 └── Dockerfile               # eclipse-temurin:21-jre-alpine + shaded jar
 ```
@@ -257,7 +228,7 @@ The synced version is recorded in `charts/runtime-operator/crds/.version`.
 
 | target | what it does |
 | --- | --- |
-| `make build` | `mvn -DskipTests package` for the whole reactor (host + vertx-demo). |
+| `make build` | `mvn -DskipTests package` for the whole reactor (host + vertx-demo + play-demo). |
 | `make demo` | `make build`, then `docker compose up -d --build`, push `examples/hello.wasm` to the local registry, apply `examples/workload.yaml`, `kubectl wait`, and `curl /hi`. |
 | `make down` | `docker compose down -v` and `rm -rf deploy/k3s/tmp`. |
 

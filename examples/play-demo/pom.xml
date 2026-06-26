@@ -11,9 +11,9 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>vertx-demo</artifactId>
-    <name>vertx-demo</name>
-    <description>Demo Vert.x app embedding the endive-host runtime alongside pure-Java handler functions</description>
+    <artifactId>play-demo</artifactId>
+    <name>play-demo</name>
+    <description>Demo Play Framework app embedding the endive-host runtime alongside pure-Java handler functions</description>
 
     <dependencies>
         <dependency>
@@ -22,13 +22,24 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Play Java API (RoutingDsl, Results, BuiltInComponents) -->
         <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-core</artifactId>
+            <groupId>org.playframework</groupId>
+            <artifactId>play-java_${scala.binary.version}</artifactId>
         </dependency>
+        <!-- Embedded Netty backend for Server.forRouter -->
         <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-web</artifactId>
+            <groupId>org.playframework</groupId>
+            <artifactId>play-netty-server_${scala.binary.version}</artifactId>
+        </dependency>
+        <!--
+          Pekko ships jackson-module-scala 2.16, which rejects the jackson-databind
+          2.18 pinned by the parent POM. Align the Scala module to the same 2.18 line.
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
@@ -61,9 +72,12 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>io.wasmcloud.endive.examples.vertx.App</mainClass>
+                                    <mainClass>io.wasmcloud.endive.examples.play.App</mainClass>
                                 </transformer>
-                                <!-- Vert.x SPI discovery relies on META-INF/services merging. -->
+                                <!-- Play / Pekko discovery relies on reference.conf and META-INF/services merging. -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>reference.conf</resource>
+                                </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
